@@ -36,9 +36,10 @@ local function makeBoolProxy(category, variable, name, defaultValue, tooltip, ge
   return setting
 end
 
-local function makeBeaconBool(category, variable, name, key, tooltip, onChange)
+local function makeBeaconBool(category, variable, name, key, tooltip, onChange, defaultValue)
+  if defaultValue == nil then defaultValue = true end
   return makeBoolProxy(
-    category, variable, name, true, tooltip,
+    category, variable, name, defaultValue, tooltip,
     function()
       local db = getDB()
       return db and db.beacon and db.beacon[key]
@@ -97,6 +98,10 @@ local function buildPanel()
   makeBeaconBool(category, "MDTNPT_BEACON_UPCOMING", L["Show Upcoming"],
     "showUpcoming", L["Preview the pull after the current one."],
     refreshBeacon)
+
+  makeBeaconBool(category, "MDTNPT_BEACON_MAPONLY", L["Map Only"],
+    "mapOnly", L["Show only the minimap, hiding the pull info panel."],
+    refreshBeacon, false)
 
   makeBeaconBool(category, "MDTNPT_BEACON_NONTANK", L["Show for non-tanks"],
     "showForNonTank", L["Display the beacon for healers and DPS, not only tanks."],

@@ -103,19 +103,21 @@ local function create()
   background:SetAllPoints()
   background:SetColorTexture(unpack(MDT.BackdropColor or { 0.058, 0.058, 0.058, 0.9 }))
 
-  -- Using function nesting here because createBeaconFrame is truly private and a one-shot initializer (no recreation cost)
-  local function createBeaconEdge(point, width, height, offsetX, offsetY)
+  -- Frame border: thin edges anchored to both corners so they track the frame
+  -- width when it toggles between the full and map-only layouts.
+  local function createBeaconEdge(p1, p2, thickness, horizontal)
     local edge = beaconFrame:CreateTexture(nil, "BORDER")
-    edge:SetSize(width, height)
-    edge:SetPoint(point, beaconFrame, point, offsetX, offsetY)
     edge:SetColorTexture(0.3, 0.3, 0.3, 0.8)
+    edge:SetPoint(p1)
+    edge:SetPoint(p2)
+    if horizontal then edge:SetHeight(thickness) else edge:SetWidth(thickness) end
     return edge
   end
 
-  createBeaconEdge("TOPLEFT", 360, 1, 0, 0)
-  createBeaconEdge("BOTTOMLEFT", 360, 1, 0, 0)
-  createBeaconEdge("TOPLEFT", 1, 166, 0, 0)
-  createBeaconEdge("TOPRIGHT", 1, 166, 0, 0)
+  createBeaconEdge("TOPLEFT", "TOPRIGHT", 1, true)
+  createBeaconEdge("BOTTOMLEFT", "BOTTOMRIGHT", 1, true)
+  createBeaconEdge("TOPLEFT", "BOTTOMLEFT", 1, false)
+  createBeaconEdge("TOPRIGHT", "BOTTOMRIGHT", 1, false)
 
   -- === MINIMAP ===
   -- Viewport (fixed size, clips the scrollable container so only a 150x150 window is visible)
@@ -332,6 +334,10 @@ local function create()
           end)
         rootDescription:CreateCheckbox(L["Show Upcoming"], function() return db.beacon.showUpcoming end, function()
           db.beacon.showUpcoming = not db.beacon.showUpcoming
+          Beacon:Update()
+        end)
+        rootDescription:CreateCheckbox(L["Map Only"], function() return db.beacon.mapOnly end, function()
+          db.beacon.mapOnly = not db.beacon.mapOnly
           Beacon:Update()
         end)
         rootDescription:CreateButton(L["Open Settings"], function()
@@ -606,8 +612,36 @@ local function renderUpcompingPreview(frame, pullStates, nextPull, showUpcoming,
   end
 end
 
+local MAP_ONLY_W = Minimap.SIZE + 16 -- minimap plus its 8px margins on each side
+
+---Switches the beacon between the full layout (minimap + info panel) and a
+---compact map-only layout that hides the info panel and shrinks the frame down
+---to just the minimap. Driven by `db.beacon.mapOnly`; called on every Show, so
+---it runs after the per-pull render has set widget visibility.
+local function applyLayoutMode(frame)
+  local db = MDT_NPT:GetDB()
+  local mapOnly = (db and db.beacon and db.beacon.mapOnly) or false
+
+  for _, widget in ipairs({ frame.pullBadge, frame.statusText, frame.infoText, frame.progressBar, frame.upcomingText }) do
+    if widget then widget:SetShown(not mapOnly) end
+  end
+
+  -- Portraits are normally shown/hidden by the per-pull render; in map-only we
+  -- force them all hidden (the render runs before this on the way back to full).
+  if mapOnly then
+    for i = 1, #frame.portraits do
+      frame.portraits[i]:Hide()
+      frame.portraitOutlines[i]:Hide()
+      if frame.portraitHovers[i] then frame.portraitHovers[i]:Hide() end
+    end
+  end
+
+  frame:SetWidth(mapOnly and MAP_ONLY_W or FRAME_BASE_W)
+end
+
 MDT_NPT.BeaconFrame = {
   create = create,
+  applyLayoutMode = applyLayoutMode,
   renderRouteComplete = renderRouteComplete,
   renderPullHeader = renderPullHeader,
   renderPercentageInfoText = renderPercentageInfoText,

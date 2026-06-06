@@ -5,6 +5,7 @@ MDT_NPT.Beacon = Beacon
 
 function Beacon:Show()
   self.frame = self.frame or MDT_NPT.BeaconFrame.create()
+  MDT_NPT.BeaconFrame.applyLayoutMode(self.frame)
   self.frame:Show()
 end
 

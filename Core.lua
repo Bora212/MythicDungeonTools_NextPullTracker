@@ -29,6 +29,9 @@ local defaultSavedVars = {
       showForNonTank = false,
       showUpcoming = true,
       askOnStart = true,
+      -- When true, the beacon shrinks to just the minimap and hides the info
+      -- panel (pull header, mob count, portraits, progress bar, upcoming).
+      mapOnly = false,
       -- Per-state colors for the minimap pull DOTS. {r, g, b, a}. Keys match
       -- BeaconMinimap's pull states.
       pullColors = {
