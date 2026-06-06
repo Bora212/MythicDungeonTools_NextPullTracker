@@ -2,12 +2,17 @@
 
 All notable changes to this project are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-05-08
+
+### Added
+
+- "Map Only" mode: a toggle that hides the beacon's info panel (pull header, mob count, portraits, progress bar, upcoming preview) and shrinks the beacon down to just the minimap. Available as a checkbox in the settings panel and in the beacon's right-click menu. Stored in `beacon.mapOnly` (off by default), applied on every Show via the new `BeaconFrame.applyLayoutMode`.
+
 ## [1.3.0] - 2026-05-08
 
 ### Added
 
 - Customizable pull colors ("Pull Colors" section in the settings panel): color pickers (with opacity) for the minimap pull dots and the outline drawn around the current pull, which are now independently colorable. The current pull (next and active) each gets a separate Dots and Outline color; the upcoming pull gets a Dots color; completed pulls keep their fixed gray. A small minimap-style preview shows the result live, and a "Reset to Defaults" button restores the palette. Dot colors are stored in `beacon.pullColors` (read by `colorForPullState`) and outline colors in `beacon.pullOutlineColors` (read by the new `outlineColorForPullState`). Defaults match the previous palette (next=green, active=orange, completed=gray, upcoming=yellow).
-
 
 ## [1.2.0] - 2026-05-08
 
@@ -58,7 +63,7 @@ All notable changes to this project are documented here. The format is based on 
 
 ### Fixed
 
-- Scenario tolerance check is now strict (`>`, previously `>=`): since Blizzard's floor-rounded integer percentages lag actual kills by strictly less than 1% of `dungeonMax`, a gap of *exactly* 1% is a real deficit and should not auto-complete the pull.
+- Scenario tolerance check is now strict (`>`, previously `>=`): since Blizzard's floor-rounded integer percentages lag actual kills by strictly less than 1% of `dungeonMax`, a gap of _exactly_ 1% is a real deficit and should not auto-complete the pull.
 - `/npt show` now re-enables the beacon after it was dismissed via the right-click "Hide Beacon" option (which persists `db.beacon.enabled = false`). Previously the beacon would re-hide on the next update, leaving the user with no way to bring it back without editing saved variables. `/npt hide` now mirrors the right-click behavior by also disabling the preference.
 - Mini-map pan is now clamped to the map's bounds so pulls near an edge no longer leave black bars on the top/bottom/left/right of the viewport. When the zoomed map is smaller than the viewport on an axis (e.g. height at whole-map zoom on 15×10 maps), the container is centered on that axis.
 
