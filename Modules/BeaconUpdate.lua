@@ -102,9 +102,9 @@ function Beacon:Update()
 
   local pull = pulls and pulls[nextPull]
   local enemies = MDT.dungeonEnemies[dungeonIndex]
-  BeaconFrame.renderEnemiesProtraits(frame, pull, enemies)
+  BeaconFrame.renderEnemiesPortraits(frame, pull, enemies)
 
-  BeaconFrame.renderUpcompingPreview(
+  BeaconFrame.renderUpcomingPreview(
     frame,
     state.pullStates,
     nextPull,
