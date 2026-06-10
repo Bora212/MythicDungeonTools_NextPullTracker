@@ -22,8 +22,6 @@ local function buildStateFromPreset(preset)
     dungeonIndex = dungeonIndex,
     presetUID = preset.uid,
     pullStates = {},
-    npcIdToPulls = {}, -- todo: remove this part because beleive this is against addons CLUF
-    seenGUIDs = {},
     currentNextPull = nil,
     authoritative = true,
     lastSyncTime = 0,
@@ -42,26 +40,6 @@ local function buildStateFromPreset(preset)
           totalCount = totalCount + cloneCount
           totalForces = totalForces + (enemyData.count or 0) * cloneCount
           if enemyData.isBoss then hasBoss = true end
-
-          local npcId = enemyData.id
-          if npcId then
-            if not state.npcIdToPulls[npcId] then
-              state.npcIdToPulls[npcId] = {}
-            end
-
-            local found = false
-            for _, npcEntry in ipairs(state.npcIdToPulls[npcId]) do
-              if npcEntry.pullIndex == pullIndex then
-                npcEntry.count = npcEntry.count + cloneCount
-                found = true
-                break
-              end
-            end
-
-            if not found then
-              table.insert(state.npcIdToPulls[npcId], { pullIndex = pullIndex, count = cloneCount })
-            end
-          end
         end
       end
     end

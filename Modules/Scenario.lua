@@ -259,9 +259,6 @@ local function onScenarioForcesUpdate()
   if stateChanged then
     dbg.print("State changed - currentNextPull = "..tostring(state.currentNextPull))
     MDT_NPT:UpdateAll()
-    if state.authoritative and MDT.LiveSession_SendPullStates then
-      MDT:LiveSession_SendPullStates()
-    end
   end
 end
 

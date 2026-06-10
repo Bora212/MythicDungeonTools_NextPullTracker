@@ -49,7 +49,7 @@ local function handleStatus()
   local ps = MDT_NPT:GetPullStateData(idx)
   print(PREFIX..": "..LABEL_COLOR.."pull #"..idx.."|r "
     ..DIM.."("..ps.state..")|r "
-    ..LABEL_COLOR.."mobs|r "..ps.killedCount.."/"..ps.totalCount.." "
+    ..LABEL_COLOR.."mobs|r "..ps.totalCount.." "
     ..LABEL_COLOR.."forces|r "..ps.forcesKilled.."/"..ps.totalForces)
 end
 
@@ -92,8 +92,9 @@ local function handleComplete()
     return
   end
   local state = MDT_NPT.state
+  local PullState = MDT_NPT.PullState
   for i, ps in ipairs(state.pullStates) do
-    if ps.state == "active" or ps.state == "next" then
+    if ps.state == PullState.ACTIVE or ps.state == PullState.NEXT then
       MDT_NPT:MarkComplete(i)
       print(PREFIX..": marked pull "..i.." complete.")
       return

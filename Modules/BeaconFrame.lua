@@ -239,7 +239,7 @@ local function create()
   mobAndForceInfoText:SetTextColor(1, 1, 1, 1)
   beaconFrame.infoText = mobAndForceInfoText
 
-  -- Enemies portraits (up to 8, laid out by renderEnemiesProtraits per pull).
+  -- Enemies portraits (up to 8, laid out by renderEnemiesPortraits per pull).
   -- ≤4 mobs → single row at 34x34; >4 mobs → 2x4 grid at 28x28.
   beaconFrame.portraits = {}
   beaconFrame.portraitOutlines = {}
@@ -408,11 +408,11 @@ local function create()
     -22,
     L["Skip Pull"],
     function()
-      local state = MDT.nextPullState
+      local state = MDT_NPT.state
       if state and state.active and state.currentNextPull then
         local nextIdx = state.currentNextPull + 1
         if nextIdx <= #state.pullStates then
-          MDT:SkipTo(nextIdx)
+          MDT_NPT:SkipTo(nextIdx)
         end
       end
     end
@@ -424,11 +424,11 @@ local function create()
     -40,
     L["Revert Pull"],
     function()
-      local state = MDT.nextPullState
+      local state = MDT_NPT.state
       if state and state.active and state.currentNextPull then
         local prevIdx = state.currentNextPull - 1
         if prevIdx >= 1 then
-          MDT:MarkIncomplete(prevIdx)
+          MDT_NPT:MarkIncomplete(prevIdx)
         end
       end
     end
@@ -514,9 +514,9 @@ local function renderCurrentPullContribution(frame, basePercentage, pullPercenta
   local barWidth = frame.progressBarWidth or 180
   local startPercentage = math.min(basePercentage, 100)
   local endPercentage = math.min(basePercentage + pullPercentage, 100)
-  local overlayWith = (endPercentage - startPercentage) / 100 * barWidth
+  local overlayWidth = (endPercentage - startPercentage) / 100 * barWidth
 
-  if overlayWith > 0.5 then
+  if overlayWidth > 0.5 then
     frame.previewOverlay:ClearAllPoints()
     frame.previewOverlay:SetPoint(
       "LEFT",
@@ -525,7 +525,7 @@ local function renderCurrentPullContribution(frame, basePercentage, pullPercenta
       (startPercentage / 100) * barWidth,
       0
     )
-    frame.previewOverlay:SetSize(overlayWith, 8)
+    frame.previewOverlay:SetSize(overlayWidth, 8)
     frame.previewOverlay:Show()
   else
     frame.previewOverlay:Hide()
@@ -559,7 +559,7 @@ local function layoutPortraitSlot(frame, i, count)
   portrait:SetPoint("TOPLEFT", frame, "TOPLEFT", x, y)
 end
 
-local function renderEnemiesProtraits(frame, pull, enemies)
+local function renderEnemiesPortraits(frame, pull, enemies)
   local enemyIndices = {}
   if pull and enemies then
     for enemyIndex in pairs(pull) do
@@ -593,16 +593,16 @@ local function renderEnemiesProtraits(frame, pull, enemies)
   end
 end
 
-local function renderUpcompingPreview(frame, pullStates, nextPull, showUpcoming, totalForcesMax)
+local function renderUpcomingPreview(frame, pullStates, nextPull, showUpcoming, totalForcesMax)
   if showUpcoming and nextPull + 1 <= #pullStates then
-    local upcompingPullState = pullStates[nextPull + 1]
-    if upcompingPullState and upcompingPullState.state ~= PullState.COMPLETED then
+    local upcomingPullState = pullStates[nextPull + 1]
+    if upcomingPullState and upcomingPullState.state ~= PullState.COMPLETED then
       local upcomingForcePercentage = string.format(
         "%.1f%%",
-        (upcompingPullState.totalForces / totalForcesMax) * 100
+        (upcomingPullState.totalForces / totalForcesMax) * 100
       )
       frame.upcomingText:SetText(L["Then"]..
-        ": "..L["Pull"].." "..(nextPull + 1).." - "..upcompingPullState.totalCount.." "..L["mobs"].." - "..upcomingForcePercentage)
+        ": "..L["Pull"].." "..(nextPull + 1).." - "..upcomingPullState.totalCount.." "..L["mobs"].." - "..upcomingForcePercentage)
       frame.upcomingText:Show()
     else
       frame.upcomingText:Hide()
@@ -647,6 +647,6 @@ MDT_NPT.BeaconFrame = {
   renderPercentageInfoText = renderPercentageInfoText,
   updateProgressBar = updateProgressBar,
   renderCurrentPullContribution = renderCurrentPullContribution,
-  renderEnemiesProtraits = renderEnemiesProtraits,
-  renderUpcompingPreview = renderUpcompingPreview,
+  renderEnemiesPortraits = renderEnemiesPortraits,
+  renderUpcomingPreview = renderUpcomingPreview,
 }

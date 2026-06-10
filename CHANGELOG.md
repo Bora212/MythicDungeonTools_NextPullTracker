@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.1] - 2026-06-10
+
+### Fixed
+
+- The beacon's Skip Pull and Revert Pull hover buttons work again. They still referenced the parent MDT addon's namespace (a leftover from when this code lived in an MDT fork), so clicking them silently did nothing; they now route to the tracker's own `SkipTo` / `MarkIncomplete`.
+- `/npt status` no longer shows a mob kill counter that was always 0 mid-pull (per-mob kills aren't observable without the combat log); it now shows the pull's mob total alongside the forces progress.
+
+### Removed
+
+- Dead code swept out: the unused `npcIdToPulls` / `seenGUIDs` tracking state, the unused `dimUpcoming` / `highlightColor` saved-variable defaults, an unreachable `LiveSession_SendPullStates` call into stock MDT, and an unloaded duplicate of `Mdt.lua` under `Utils/`.
+
 ## [1.4.0] - 2026-05-08
 
 ### Added
