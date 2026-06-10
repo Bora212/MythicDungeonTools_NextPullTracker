@@ -8,6 +8,10 @@ All notable changes to this project are documented here. The format is based on 
 
 - The route no longer completes prematurely when playing off-route (user report: "shows me I am finished with 100% but in real it was much lower"). Two leaks let pull credit run ahead of the scenario's reported forces: the 1% rounding tolerance was being granted at every pull boundary instead of once globally (Blizzard's floored percentages arrive in 1% quanta, pull sizes never align, so almost every pull closed up to 1% early and a 25-pull route finished 5-15% ahead of reality), and a boss kill credited the boss pull's still-alive planned trash, whose real forces then advanced later pulls a second time. Both now record their unbacked credit as a "phantom debt" (`state.phantomDebt`) that subsequent reported deltas repay before any new pull advances, capping total optimism at one tolerance (1% of dungeon max) for the whole run. `/npt skip` clears the debt since it re-baselines tracking by explicit user intent.
 
+### Removed
+
+- Dead code swept out; remove root level scenario that is an orphan file.
+
 ## [1.5.0] - 2026-06-10
 
 ### Added
