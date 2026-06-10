@@ -33,6 +33,8 @@ function MDT_NPT:MarkComplete(pullIndex)
   local pullState = state.pullStates[pullIndex]
   if not pullState then return end
 
+  state.phantomDebt      = (state.phantomDebt or 0) + pullState.totalForces
+
   pullState.state        = PullState.COMPLETED
   pullState.killedCount  = pullState.totalCount
   pullState.forcesKilled = pullState.totalForces

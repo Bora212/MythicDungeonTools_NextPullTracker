@@ -17,9 +17,9 @@ describe("API.lua", function()
     opts = opts or {}
     return {
       state        = state,
-      totalCount   = opts.totalCount   or 5,
-      totalForces  = opts.totalForces  or 10,
-      killedCount  = opts.killedCount  or 0,
+      totalCount   = opts.totalCount or 5,
+      totalForces  = opts.totalForces or 10,
+      killedCount  = opts.killedCount or 0,
       forcesKilled = opts.forcesKilled or 0,
       lastUpdate   = 0,
     }
@@ -29,10 +29,10 @@ describe("API.lua", function()
     mocks.reset()
 
     -- Spies / stubs for the dependencies API.lua captures at load time.
-    recomputeCalls  = 0
-    updateAllCalls  = 0
+    recomputeCalls      = 0
+    updateAllCalls      = 0
 
-    _G.MDT_NPT.State = {
+    _G.MDT_NPT.State    = {
       recomputeNextPull = function(_) recomputeCalls = recomputeCalls + 1 end,
     }
     _G.MDT_NPT.Scenario = {
@@ -48,7 +48,7 @@ describe("API.lua", function()
   describe("MarkComplete", function()
     it("writes all four fields, calls recompute + UpdateAll", function()
       _G.MDT_NPT.state = makeState({
-        pull("next",     { totalCount = 3, totalForces = 20 }),
+        pull("next", { totalCount = 3, totalForces = 20 }),
         pull("upcoming", { totalCount = 5, totalForces = 50 }),
       }, 1)
 
@@ -56,10 +56,11 @@ describe("API.lua", function()
 
       local p = _G.MDT_NPT.state.pullStates[1]
       assert.equals("completed", p.state)
-      assert.equals(3,           p.killedCount)
-      assert.equals(20,          p.forcesKilled)
+      assert.equals(3, p.killedCount)
+      assert.equals(20, p.forcesKilled)
       assert.equals(1, recomputeCalls)
       assert.equals(1, updateAllCalls)
+      assert.equals(20, _G.MDT_NPT.state.phantomDebt)
     end)
 
     it("is a no-op when state is inactive", function()
@@ -105,7 +106,7 @@ describe("API.lua", function()
     -- Build a 5-pull state: all upcoming except currentNextPull=1
     local function fivePullState()
       return makeState({
-        pull("next",     { totalCount = 2, totalForces = 10 }),
+        pull("next", { totalCount = 2, totalForces = 10 }),
         pull("upcoming", { totalCount = 3, totalForces = 15 }),
         pull("upcoming", { totalCount = 4, totalForces = 20 }),
         pull("upcoming", { totalCount = 5, totalForces = 25 }),
@@ -120,10 +121,10 @@ describe("API.lua", function()
       local p1 = _G.MDT_NPT.state.pullStates[1]
       local p2 = _G.MDT_NPT.state.pullStates[2]
       assert.equals("completed", p1.state)
-      assert.equals(p1.totalCount,  p1.killedCount)
+      assert.equals(p1.totalCount, p1.killedCount)
       assert.equals(p1.totalForces, p1.forcesKilled)
       assert.equals("completed", p2.state)
-      assert.equals(p2.totalCount,  p2.killedCount)
+      assert.equals(p2.totalCount, p2.killedCount)
       assert.equals(p2.totalForces, p2.forcesKilled)
     end)
 
@@ -155,7 +156,7 @@ describe("API.lua", function()
     end)
 
     it("preserves already-completed pulls past the target (i > pullIndex, COMPLETED branch)", function()
-      _G.MDT_NPT.state = fivePullState()
+      _G.MDT_NPT.state                            = fivePullState()
       _G.MDT_NPT.state.pullStates[5].state        = "completed"
       _G.MDT_NPT.state.pullStates[5].killedCount  = 6
       _G.MDT_NPT.state.pullStates[5].forcesKilled = 30
@@ -164,7 +165,7 @@ describe("API.lua", function()
 
       local p5 = _G.MDT_NPT.state.pullStates[5]
       assert.equals("completed", p5.state)
-      assert.equals(6,  p5.killedCount)
+      assert.equals(6, p5.killedCount)
       assert.equals(30, p5.forcesKilled)
     end)
 
