@@ -186,6 +186,81 @@ describe("Scenario.lua", function()
       assert.equals(30, _G.MDT_NPT.state.lastForces)
     end)
 
+    -- The tolerance forgives Blizzard's floored-percent lag, which is bounded
+    -- by 1% of dungeonMax GLOBALLY. Each tolerance-assisted close must record
+    -- its shortfall as phantom debt, repaid from the next reported delta;
+    -- otherwise the forgiveness leaks once per pull and compounds into the
+    -- route completing several percent before the real forces do.
+    describe("phantom debt", function()
+      it("records the tolerance shortfall as debt on an assisted close", function()
+        -- dungeonMax=200 → tolerance=2. delta=20 vs remainder 21 → close, 1 short.
+        _G.MDT_NPT.state = makeState({ pull("next", 21), pull("upcoming", 20) }, 1)
+        currentForcesReading = 20
+        Scenario.onScenarioForcesUpdate()
+
+        assert.equals("completed", _G.MDT_NPT.state.pullStates[1].state)
+        assert.equals(1, _G.MDT_NPT.state.phantomDebt)
+      end)
+
+      it("repays debt from the next delta before advancing the next pull", function()
+        _G.MDT_NPT.state = makeState({ pull("next", 21), pull("upcoming", 20) }, 1)
+        currentForcesReading = 20
+        Scenario.onScenarioForcesUpdate() -- pull 1 closes 1 short, debt=1
+
+        currentForcesReading = 22 -- delta 2: 1 repays the debt, only 1 reaches pull 2
+        Scenario.onScenarioForcesUpdate()
+
+        assert.equals(0, _G.MDT_NPT.state.phantomDebt)
+        assert.equals(1, _G.MDT_NPT.state.pullStates[2].forcesKilled)
+      end)
+
+      it("records no debt on an exact close with overflow", function()
+        _G.MDT_NPT.state = makeState({ pull("next", 20), pull("upcoming", 20) }, 1)
+        currentForcesReading = 25 -- covers pull 1 fully, 5 bleeds into pull 2
+        Scenario.onScenarioForcesUpdate()
+
+        assert.equals(0, _G.MDT_NPT.state.phantomDebt or 0)
+        assert.equals(5, _G.MDT_NPT.state.pullStates[2].forcesKilled)
+      end)
+
+      it("regression: quantized 1% ticks never credit more than reported + one tolerance", function()
+        -- Replays the reported bug: Blizzard's floored percentages arrive in
+        -- 1% quanta while pull sizes are arbitrary, so almost every pull closes
+        -- misaligned. Route: 6 pulls x 115 = 690 of dungeonMax 1000 (tolerance
+        -- 10, tick = 10 absolute). Every pull's remainder hits 15 at its close,
+        -- so the old per-pull tolerance leaked 5 per pull and finished the
+        -- route at 660 reported forces; with the debt ledger it must take the
+        -- full 690.
+        _G.MDT.dungeonTotalCount[1] = { normal = 1000 }
+        local pulls = {}
+        for _ = 1, 6 do pulls[#pulls + 1] = pull("upcoming", 115) end
+        pulls[1].state = "next"
+        _G.MDT_NPT.state = makeState(pulls, 1)
+        scenarioCriteria = {
+          { quantity = 0, totalQuantity = 100, isWeightedProgress = true },
+        }
+
+        local state = _G.MDT_NPT.state
+        for pct = 1, 66 do
+          scenarioCriteria[1].quantity = pct
+          Scenario.onScenarioForcesUpdate()
+
+          local credited = 0
+          for _, ps in ipairs(state.pullStates) do credited = credited + ps.forcesKilled end
+          assert.is_true(credited <= pct * 10 + 10,
+            "credited "..credited.." exceeds reported "..(pct * 10).." + tolerance at "..pct.."%")
+        end
+        -- 660 reported: the old algorithm had already completed the route here.
+        assert.is_not_nil(state.currentNextPull, "route completed before its forces were reported")
+
+        for pct = 67, 69 do
+          scenarioCriteria[1].quantity = pct
+          Scenario.onScenarioForcesUpdate()
+        end
+        assert.is_nil(state.currentNextPull) -- 690 reported = route total: now complete
+      end)
+    end)
+
     -- Boss pulls typically have totalForces=0 (the boss itself contributes no
     -- enemy forces). The forces-delta path alone would either collapse the pull
     -- on overflow from the preceding trash pull, or leave it stuck if no delta
@@ -349,6 +424,37 @@ describe("Scenario.lua", function()
 
         assert.equals("next", _G.MDT_NPT.state.pullStates[2].state)
         assert.equals(2, _G.MDT_NPT.state.currentNextPull)
+      end)
+
+      it("records a boss pull's unreported planned forces as phantom debt, repaid by later kills", function()
+        -- Boss pull planned WITH trash (30 forces). The boss dies while that
+        -- trash is still alive (off-route play). Completing the pull credits
+        -- 30 forces the scenario never reported; without the debt ledger the
+        -- delta from killing that trash later would wrongly advance pull 2.
+        _G.MDT_NPT.state = makeState({
+          { state = "next", totalCount = 4, totalForces = 30,
+            forcesKilled = 0, killedCount = 0, lastUpdate = 0, hasBoss = true },
+          pull("upcoming", 40),
+        }, 1)
+        scenarioCriteria = {
+          { quantity = 0, totalQuantity = 100, isWeightedProgress = true },
+          { quantity = 0, totalQuantity = 1,   isWeightedProgress = false, completed = false },
+        }
+        Scenario.onScenarioForcesUpdate() -- seed pass
+
+        -- Boss dies with its planned trash untouched.
+        scenarioCriteria[2].completed = true
+        Scenario.onScenarioForcesUpdate()
+        assert.equals("completed", _G.MDT_NPT.state.pullStates[1].state)
+        assert.equals(30, _G.MDT_NPT.state.phantomDebt)
+
+        -- The boss pull's trash dies now: 15% of dungeonMax=200 → 30 absolute.
+        -- That delta must repay the advance, not advance pull 2.
+        scenarioCriteria[1].quantity = 15
+        Scenario.onScenarioForcesUpdate()
+        assert.equals(0,      _G.MDT_NPT.state.phantomDebt)
+        assert.equals(0,      _G.MDT_NPT.state.pullStates[2].forcesKilled)
+        assert.equals("next", _G.MDT_NPT.state.pullStates[2].state)
       end)
 
       it("advances the boss pull before attributing coincident trash forces to the next pull", function()

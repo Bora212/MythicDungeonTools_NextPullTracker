@@ -23,6 +23,10 @@ local function buildStateFromPreset(preset)
     presetUID = preset.uid,
     pullStates = {},
     currentNextPull = nil,
+    -- Forces credited to pulls ahead of what the scenario has reported
+    -- (tolerance-assisted closes, boss-pull credits); repaid from later
+    -- deltas before any new pull advancement. See Scenario.lua.
+    phantomDebt = 0,
     authoritative = true,
     lastSyncTime = 0,
   }

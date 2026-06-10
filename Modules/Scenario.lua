@@ -78,6 +78,15 @@ local function tryConsumeBossKill(state)
   if not (pullState and pullState.hasBoss) then return false end
 
   dbg.print("consuming pending boss kill - marking pull "..pullIndex.." complete")
+  -- Planned forces in the boss pull that the scenario hasn't reported yet
+  -- (trash planned alongside the boss may still be alive). Record them as
+  -- phantom debt so the deltas from killing that trash later repay the
+  -- advance instead of wrongly completing pulls further down the route.
+  local unreported = (pullState.totalForces or 0) - (pullState.forcesKilled or 0)
+  if unreported > 0 then
+    state.phantomDebt = (state.phantomDebt or 0) + unreported
+    dbg.print("boss pull credited "..unreported.." unreported forces - phantomDebt="..state.phantomDebt)
+  end
   pullState.forcesKilled = pullState.totalForces or 0
   pullState.state = PullState.COMPLETED
   pullState.lastUpdate = GetTime()
@@ -157,6 +166,19 @@ local function onScenarioForcesUpdate()
     end
 
     local forcesDelta = currentForces - state.lastForces
+
+    -- Phantom debt: forces credited to pulls ahead of what the scenario has
+    -- actually reported (tolerance-assisted closes, boss-pull credits). Repay
+    -- it from this delta before advancing anything new, so total credit never
+    -- runs ahead of reported forces by more than one tolerance.
+    if forcesDelta > 0 and (state.phantomDebt or 0) > 0 then
+      local repaid = math.min(state.phantomDebt, forcesDelta)
+      state.phantomDebt = state.phantomDebt - repaid
+      forcesDelta = forcesDelta - repaid
+      dbg.print("repaid "..repaid.." phantom debt - debt="..state.phantomDebt..
+        " effective delta="..forcesDelta)
+    end
+
     if forcesDelta > 0 then
       dbg.print("DELTA "..forcesDelta.." detected - consuming...")
 
@@ -216,6 +238,18 @@ local function onScenarioForcesUpdate()
           end
 
           if remainingForces + tolerance > remainingInPull then
+            -- Tolerance-assisted close: the reported delta may fall short of
+            -- the pull's remainder by up to one tolerance (Blizzard's floored
+            -- percentages lag actual kills). Record the shortfall as phantom
+            -- debt; the next reported delta repays it before advancing. The
+            -- forgiveness is therefore bounded globally at one tolerance
+            -- instead of leaking once per pull, which compounded into routes
+            -- completing several percent before the real forces did.
+            if remainingForces < remainingInPull then
+              state.phantomDebt = (state.phantomDebt or 0) + (remainingInPull - remainingForces)
+              dbg.print("  tolerance close short by "..(remainingInPull - remainingForces)..
+                " - phantomDebt="..state.phantomDebt)
+            end
             pullState.forcesKilled = pullState.totalForces
             pullState.state = PullState.COMPLETED
             pullState.lastUpdate = GetTime()

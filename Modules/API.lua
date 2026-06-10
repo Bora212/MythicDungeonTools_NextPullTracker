@@ -81,7 +81,10 @@ function MDT_NPT:SkipTo(pullIndex)
     pullState.lastUpdate = GetTime()
   end
   state.currentNextPull = pullIndex
+  -- Re-baseline: the user explicitly declared where the route stands, so
+  -- forget the reported-forces baseline AND any outstanding phantom debt.
   state.lastForces = Scenario.getScenarioCurrentForces()
+  state.phantomDebt = 0
 
   self:UpdateAll()
 end

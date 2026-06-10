@@ -168,6 +168,15 @@ describe("API.lua", function()
       assert.equals(30, p5.forcesKilled)
     end)
 
+    it("clears outstanding phantom debt (manual re-baseline)", function()
+      _G.MDT_NPT.state = fivePullState()
+      _G.MDT_NPT.state.phantomDebt = 7
+
+      _G.MDT_NPT:SkipTo(3)
+
+      assert.equals(0, _G.MDT_NPT.state.phantomDebt)
+    end)
+
     it("reseeds state.lastForces from the scenario API", function()
       _G.MDT_NPT.state = fivePullState()
       _G.MDT_NPT.state.lastForces = 0
