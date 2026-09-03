@@ -133,9 +133,10 @@ function Beacon:Update()
   BeaconMinimap.drawCurrentPullOutline(frame, pull, sublevel, enemies, pullState and pullState.state)
 
   -- Apply the rotation on top of the freshly rendered, unrotated layout.
-  if (frame.rotationDeg or 0) ~= 0 then
-    BeaconMinimap.applyRotation(frame, frame.rotationDeg, bounds)
-  end
+  -- At 0° we must still reset the tile texture spins (SetRotation) left over
+  -- from the previous rotation — positions are restored by applyZoom above,
+  -- but angles are not.
+  BeaconMinimap.applyRotation(frame, frame.rotationDeg or 0, bounds)
 
   Beacon:Show()
 end
