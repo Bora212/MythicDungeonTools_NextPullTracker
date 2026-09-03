@@ -450,7 +450,7 @@ local function create()
   -- rotates ±90°, saves the angle for the current pull and re-renders.
   local function createRotateButton(offsetX, direction, label, tooltip)
     local btn = CreateFrame("Button", nil, beaconFrame)
-    btn:SetSize(16, 16)
+    btn:SetSize(24, 16)
     btn:SetPoint("TOPRIGHT", beaconFrame, "TOPRIGHT", offsetX, -4)
     btn:SetAlpha(0)
 
@@ -494,13 +494,13 @@ local function create()
     return btn
   end
 
-  beaconFrame.rotateCwBtn = createRotateButton(-58, 1, "⟳", "Rotate map +90°")
-  beaconFrame.rotateCcwBtn = createRotateButton(-76, -1, "⟲", "Rotate map -90°")
+  beaconFrame.rotateCwBtn = createRotateButton(-58, 1, "+90", "Rotate map +90°")
+  beaconFrame.rotateCcwBtn = createRotateButton(-76, -1, "-90", "Rotate map -90°")
 
   -- Permanent corner buttons on the minimap (bottom-left, opposite zoom +/-).
   local function createCornerRotateButton(offsetX, direction, label, tooltip)
     local btn = CreateFrame("Button", nil, beaconFrame.minimapFrame)
-    btn:SetSize(16, 16)
+    btn:SetSize(24, 16)
     btn:SetPoint("BOTTOMLEFT", beaconFrame.minimapFrame, "BOTTOMLEFT", offsetX, 2)
 
     local bg = btn:CreateTexture(nil, "BACKGROUND")
@@ -542,8 +542,8 @@ local function create()
     return btn
   end
 
-  beaconFrame.rotateCcwCorner = createCornerRotateButton(2, -1, "⟲", "Rotate map -90°")
-  beaconFrame.rotateCwCorner = createCornerRotateButton(20, 1, "⟳", "Rotate map +90°")
+  beaconFrame.rotateCcwCorner = createCornerRotateButton(2, -1, "-90", "Rotate map -90°")
+  beaconFrame.rotateCwCorner = createCornerRotateButton(20, 1, "+90", "Rotate map +90°")
 
   beaconFrame:SetScript("OnEnter", function(self)
     self.completeBtn:SetAlpha(0.7)
