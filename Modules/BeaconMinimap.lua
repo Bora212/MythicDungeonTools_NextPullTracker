@@ -34,6 +34,10 @@ local function applyZoom(frame, scale)
       local tile = frame.minimapTiles[tileIndex]
       if tile then
         tile:SetSize(tileSize, tileSize)
+        -- ClearAllPoints is required: applyZoom runs on every Update and the
+        -- rotation feature re-anchors tiles at CENTER, so a stale anchor
+        -- would corrupt the layout.
+        tile:ClearAllPoints()
         tile:SetPoint(
           "TOPLEFT",
           frame.minimapContainer,
@@ -411,9 +415,9 @@ local function applyRotation(frame, deg, bounds)
   local pivotX, pivotY = cx * scale, cy * scale
   local container = frame.minimapContainer
 
-  -- --- Tiles: unrotated layout has row 1 = map top. Convert row i to the
-  -- y-up tile-center world y: wy = (GRID_ROWS - i + 0.5) * BASE_TILE.
-  local tileSize = BASE_TILE * scale
+  -- --- Tiles: use the SAME anchor space as dots — container TOPLEFT offsets
+  -- with +y = up (dots sit at clone.y*scale; row 1 = map top = high world y,
+  -- so tile center wy = (GRID_ROWS - i + 0.5) * BASE_TILE).
   for i = 1, GRID_ROWS do
     for j = 1, GRID_COLS do
       local tile = frame.minimapTiles[(i - 1) * GRID_COLS + j]
@@ -424,9 +428,9 @@ local function applyRotation(frame, deg, bounds)
         local rx, ry = rotateOffset(deg, dx, dy)
         tile:ClearAllPoints()
         tile:SetPoint("CENTER", container, "TOPLEFT", pivotX + rx, pivotY + ry)
-        -- SetRotation(+) spins the texture counter-clockwise on screen while
-        -- our positions rotate clockwise; negate to keep tile content
-        -- aligned with the map.
+        -- rotateOffset spins positions clockwise; Texture:SetRotation(+)
+        -- spins counter-clockwise, so negate to keep each tile's image
+        -- aligned with its new position.
         if tile.SetRotation then tile:SetRotation(math.rad(-deg)) end
       end
     end
