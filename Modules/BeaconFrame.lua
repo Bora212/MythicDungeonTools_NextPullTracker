@@ -58,10 +58,10 @@ local function createResizeGrip(parent)
     self:SetScript("OnUpdate", nil)
     MDT_NPT:GetBeaconState().scale = parent:GetScale()
     -- The drag suppressed the normal OnLeave fade, so re-evaluate now.
-    if not MouseIsOver(parent) then
+    if not isMouseOver(parent) then
       local onLeave = parent:GetScript("OnLeave")
       if onLeave then onLeave(parent) end
-    elseif not MouseIsOver(self) then
+    elseif not isMouseOver(self) then
       self:SetAlpha(0.7)
     end
   end)
@@ -547,7 +547,7 @@ local function create()
   end)
 
   beaconFrame:SetScript("OnLeave", function(self)
-    if not MouseIsOver(self) then
+    if not isMouseOver(self) then
       self.completeBtn:SetAlpha(0)
       self.skipBtn:SetAlpha(0)
       self.revertBtn:SetAlpha(0)
