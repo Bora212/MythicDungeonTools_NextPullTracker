@@ -415,22 +415,25 @@ local function applyRotation(frame, deg, bounds)
   local pivotX, pivotY = cx * scale, cy * scale
   local container = frame.minimapContainer
 
-  -- --- Tiles: use the SAME anchor space as dots — container TOPLEFT offsets
-  -- with +y = up (dots sit at clone.y*scale; row 1 = map top = high world y,
-  -- so tile center wy = (GRID_ROWS - i + 0.5) * BASE_TILE).
+  -- --- Tiles: the render space is y-DOWN from container TOPLEFT. MDT world
+  -- y is negative (all dungeon y values < 0), so NPT's dot anchor
+  -- (clone.x*scale, clone.y*scale) lands below the top edge; tiles are laid
+  -- out with TOPLEFT y = -(i-1)*T*s the same way. Tile (i,j) center in this
+  -- space: px=(j-0.5)*T*s, py=-(i-0.5)*T*s. Dots need no conversion — their
+  -- world offsets are already y-down screen offsets.
   for i = 1, GRID_ROWS do
     for j = 1, GRID_COLS do
       local tile = frame.minimapTiles[(i - 1) * GRID_COLS + j]
       if tile and tile:IsShown() then
-        local wx = (j - 0.5) * BASE_TILE
-        local wy = (GRID_ROWS - i + 0.5) * BASE_TILE
-        local dx, dy = wx * scale - pivotX, wy * scale - pivotY
+        local px = (j - 0.5) * BASE_TILE * scale
+        local py = -(i - 0.5) * BASE_TILE * scale
+        local dx, dy = px - pivotX, py - pivotY
         local rx, ry = rotateOffset(deg, dx, dy)
         tile:ClearAllPoints()
         tile:SetPoint("CENTER", container, "TOPLEFT", pivotX + rx, pivotY + ry)
-        -- rotateOffset spins positions clockwise; Texture:SetRotation(+)
-        -- spins counter-clockwise, so negate to keep each tile's image
-        -- aligned with its new position.
+        -- Texture:SetRotation(+) spins the image counter-clockwise in this
+        -- y-down space while rotateOffset spins positions clockwise, so
+        -- negate to keep each tile's image aligned with its new position.
         if tile.SetRotation then tile:SetRotation(math.rad(-deg)) end
       end
     end
