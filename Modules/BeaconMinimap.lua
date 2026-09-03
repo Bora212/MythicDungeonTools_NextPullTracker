@@ -307,6 +307,7 @@ local function drawCurrentPullOutline(frame, pull, sublevel, enemies, pullState)
 
   local scale = frame.minimapScale or MIN_SCALE
   local r, g, b, a = outlineColorForPullState(pullState)
+  frame.__RNPT_hull = hull -- rotation bookkeeping (RotateNextPullTracker)
 
   for i = 1, hullSize do
     local line = lines[i]
@@ -337,6 +338,7 @@ local function updateMinimapDots(frame, state, pulls, enemies, sublevel)
   -- Hide all existing dots
   for _, dot in ipairs(frame.dots) do
     dot:Hide()
+    dot.__RNPT_wx, dot.__RNPT_wy = nil, nil -- rotation bookkeeping (RotateNextPullTracker)
   end
 
   -- Draw dots for relevant pulls (next, +/-1 for context)
@@ -363,9 +365,102 @@ local function updateMinimapDots(frame, state, pulls, enemies, sublevel)
               local scaledY = clone.y * scale
               dot:ClearAllPoints()
               dot:SetPoint("CENTER", frame.minimapContainer, "TOPLEFT", scaledX, scaledY)
+              dot.__RNPT_wx, dot.__RNPT_wy = clone.x, clone.y -- rotation bookkeeping
               dot:SetSize(5, 5)
               dot:Show()
             end
+          end
+        end
+      end
+    end
+  end
+end
+
+-- =====================================================================
+-- Minimap rotation (RotateNextPullTracker)
+-- =====================================================================
+-- All rotation math uses ONE space: container-local pixels with x right and
+-- y UP (the space NPT's dots/outline already anchor in via TOPLEFT offsets).
+-- World coords convert to this space as px = wx*scale, py = wy*scale — note
+-- MDT's world y grows UP, and NPT anchors dots at (clone.x*scale, .y*scale)
+-- from container TOPLEFT, which already matches that (container TOPLEFT is
+-- the map's bottom in y-up terms).
+--
+-- Tiles are the exception in unrotated layout (row 1 = map top). We convert
+-- each tile to the same y-up space, rotate, and re-anchor — so tiles, dots
+-- and outline all share one consistent transform.
+
+---Rotates a (dx, dy) offset clockwise on screen by `deg` degrees.
+local function rotateOffset(deg, dx, dy)
+  local a = math.rad(deg)
+  local c, s = math.cos(a), math.sin(a)
+  return dx * c + dy * s, -dx * s + dy * c
+end
+
+---Re-applies `deg` rotation on top of the just-rendered unrotated layout.
+---`bounds` is the current pull's bounds (centroid = rotation pivot).
+---Everything NPT rendered unrotated is re-anchored rotated; nothing else.
+local function applyRotation(frame, deg, bounds)
+  if not frame or not frame.minimapContainer or not bounds then return end
+  deg = ((math.floor(deg / 90 + 0.5) * 90) % 360 + 360) % 360
+  frame.rotationDeg = deg
+  if deg == 0 then return end
+
+  local scale = frame.minimapScale or MIN_SCALE
+  local cx, cy = bounds.centroidX, bounds.centroidY
+  local pivotX, pivotY = cx * scale, cy * scale
+  local container = frame.minimapContainer
+
+  -- --- Tiles: unrotated layout has row 1 = map top. Convert row i to the
+  -- y-up tile-center world y: wy = (GRID_ROWS - i + 0.5) * BASE_TILE.
+  local tileSize = BASE_TILE * scale
+  for i = 1, GRID_ROWS do
+    for j = 1, GRID_COLS do
+      local tile = frame.minimapTiles[(i - 1) * GRID_COLS + j]
+      if tile and tile:IsShown() then
+        local wx = (j - 0.5) * BASE_TILE
+        local wy = (GRID_ROWS - i + 0.5) * BASE_TILE
+        local dx, dy = wx * scale - pivotX, wy * scale - pivotY
+        local rx, ry = rotateOffset(deg, dx, dy)
+        tile:ClearAllPoints()
+        tile:SetPoint("CENTER", container, "TOPLEFT", pivotX + rx, pivotY + ry)
+        -- SetRotation(+) spins the texture counter-clockwise on screen while
+        -- our positions rotate clockwise; negate to keep tile content
+        -- aligned with the map.
+        if tile.SetRotation then tile:SetRotation(math.rad(-deg)) end
+      end
+    end
+  end
+
+  -- --- Dots: NPT anchored each dot at its world position * scale from
+  -- container TOPLEFT (y-up). Re-derive those anchors by inverting the
+  -- rotation, so re-rotation after re-render is idempotent.
+  if frame.dots then
+    for _, dot in ipairs(frame.dots) do
+      if dot:IsShown() then
+        local dx, dy = dot.__RNPT_wx and (dot.__RNPT_wx * scale - pivotX) or nil,
+                       dot.__RNPT_wy and (dot.__RNPT_wy * scale - pivotY) or nil
+        if dx then
+          local rx, ry = rotateOffset(deg, dx, dy)
+          dot:ClearAllPoints()
+          dot:SetPoint("CENTER", container, "TOPLEFT", pivotX + rx, pivotY + ry)
+        end
+      end
+    end
+  end
+
+  -- --- Outline: rewrite each visible hull line's endpoints rotated.
+  if frame.outlineLines then
+    local hull = frame.__RNPT_hull
+    if hull and #hull >= 3 then
+      for i, line in ipairs(frame.outlineLines) do
+        if line:IsShown() then
+          local va, vb = hull[i], hull[(i % #hull) + 1]
+          if va and vb then
+            local rax, ray = rotateOffset(deg, va.x * scale - pivotX, va.y * scale - pivotY)
+            local rbx, rby = rotateOffset(deg, vb.x * scale - pivotX, vb.y * scale - pivotY)
+            line:SetStartPoint("TOPLEFT", container, pivotX + rax, pivotY + ray)
+            line:SetEndPoint("TOPLEFT", container, pivotX + rbx, pivotY + rby)
           end
         end
       end
@@ -389,6 +484,8 @@ MDT_NPT.BeaconMinimap = {
   centerMinimapOnPull = centerMinimapOnPull,
   updateMinimapDots = updateMinimapDots,
   drawCurrentPullOutline = drawCurrentPullOutline,
+  applyRotation = applyRotation,
+  rotateOffset = rotateOffset,
   DEFAULT_PULL_COLORS = DEFAULT_PULL_COLORS,
   DEFAULT_OUTLINE_COLORS = DEFAULT_OUTLINE_COLORS,
 }

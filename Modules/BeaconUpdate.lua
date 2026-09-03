@@ -118,11 +118,24 @@ function Beacon:Update()
   BeaconMinimap.applyZoom(frame, BeaconMinimap.computeZoomScale(bounds, frame.userZoomMultiplier))
   BeaconMinimap.loadTextures(frame, dungeonIndex, sublevel)
 
+  -- Rotation context: track which dungeon/sublevel/pull is on screen so each
+  -- pull keeps its own saved rotation (restored when the pull changes).
+  local rotKey = tostring(dungeonIndex)..":"..tostring(sublevel)..":"..tostring(nextPull)
+  if frame.rotationKey ~= rotKey then
+    frame.rotationKey = rotKey
+    frame.rotationDeg = MDT_NPT:GetMinimapRotation(dungeonIndex, sublevel, nextPull) or 0
+  end
+
   if bounds then
     BeaconMinimap.centerMinimapOnPull(frame, bounds.centroidX, bounds.centroidY)
   end
   BeaconMinimap.updateMinimapDots(frame, state, pulls, enemies, sublevel)
   BeaconMinimap.drawCurrentPullOutline(frame, pull, sublevel, enemies, pullState and pullState.state)
+
+  -- Apply the rotation on top of the freshly rendered, unrotated layout.
+  if (frame.rotationDeg or 0) ~= 0 then
+    BeaconMinimap.applyRotation(frame, frame.rotationDeg, bounds)
+  end
 
   Beacon:Show()
 end

@@ -65,6 +65,46 @@ local function handleShow()
   MDT_NPT.Beacon:Update()
 end
 
+---Rotate the beacon minimap ±90° (RotateNextPullTracker). Optional argument:
+---an absolute angle (0/90/180/270); empty = +90.
+local function handleRotate(rest)
+  local Beacon = MDT_NPT.Beacon
+  if not (Beacon and Beacon.frame and Beacon.frame.minimapFrame) then
+    print(PREFIX..": beacon is not active — start tracking first.")
+    return
+  end
+  local frame = Beacon.frame
+  local st = MDT_NPT.state
+  if not (st and st.active) then
+    print(PREFIX..": tracking is not active.")
+    return
+  end
+  local preset = MDT and MDT.GetCurrentPreset and MDT.GetCurrentPreset(st.dungeonIndex)
+  local sublevel = (preset and preset.value and preset.value.currentSublevel) or 1
+  local newDeg
+  local n = tonumber(rest)
+  if n then
+    newDeg = ((math.floor(n / 90 + 0.5) * 90) % 360 + 360) % 360
+  else
+    newDeg = ((frame.rotationDeg or 0) + 90) % 360
+  end
+  frame.rotationDeg = newDeg
+  MDT_NPT:SetMinimapRotation(st.dungeonIndex, sublevel, st.currentNextPull, newDeg)
+  Beacon:Update()
+  print(PREFIX..": rotation set to "..newDeg.."° (saved for this pull).")
+end
+
+---Clears ALL saved minimap rotations (RotateNextPullTracker).
+local function handleRotateReset()
+  local db = MDT_NPT.GetDB and MDT_NPT:GetDB()
+  if db then db.minimapRotations = {} end
+  if MDT_NPT.Beacon and MDT_NPT.Beacon.frame then
+    MDT_NPT.Beacon.frame.rotationDeg = 0
+  end
+  if MDT_NPT.Beacon and MDT_NPT.Beacon.Update then MDT_NPT.Beacon:Update() end
+  print(PREFIX..": all saved rotations cleared.")
+end
+
 local function handleHide()
   if not (MDT_NPT.Beacon and MDT_NPT.Beacon.Hide) then return end
   local db = MDT_NPT.GetDB and MDT_NPT:GetDB()
@@ -185,6 +225,8 @@ commands = {
   { name = "revert",   usage = "revert",      help = "undo the most recent pull completion",              handler = handleRevert },
   { name = "show",     usage = "show",        help = "enable and show the beacon HUD",                    handler = handleShow },
   { name = "hide",     usage = "hide",        help = "disable and hide the beacon HUD",                   handler = handleHide },
+  { name = "rotate",   usage = "rotate [N]",  help = "rotate the minimap 90° (or to N°); saved per pull", handler = handleRotate },
+  { name = "rotatereset", usage = "rotatereset", help = "clear ALL saved minimap rotations",              handler = handleRotateReset },
   { name = "settings", usage = "settings",    help = "open the settings panel",                           handler = handleSettings },
   { name = "test",     usage = "test",        help = "run the integration test suite",                    handler = handleTest },
   { name = "help",     usage = "help",        help = "show this help message",                            handler = printHelp },
@@ -204,4 +246,5 @@ function MDT_NPT:Slash(args)
 end
 
 SLASH_MDTNPT1 = "/npt"
+SLASH_MDTNPT2 = "/rnpt"
 SlashCmdList["MDTNPT"] = function(msg) MDT_NPT:Slash(msg or "") end

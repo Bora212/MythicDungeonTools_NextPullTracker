@@ -90,6 +90,28 @@ function MDT_NPT:GetDB() return db end
 function MDT_NPT:GetDBChar() return dbChar end
 
 -- =====================================================================
+-- Minimap rotation persistence (RotateNextPullTracker)
+-- =====================================================================
+
+---Stored rotation (degrees) for a dungeon/sublevel/pull combination.
+---Rotations live under db.minimapRotations[key] = 0|90|180|270.
+function MDT_NPT:GetMinimapRotation(dungeonIndex, sublevel, pullIndex)
+  if not db then db = self:GetDB() end
+  if not db or not db.minimapRotations then return 0 end
+  local key = tostring(dungeonIndex)..":"..tostring(sublevel)..":"..tostring(pullIndex)
+  return db.minimapRotations[key] or 0
+end
+
+function MDT_NPT:SetMinimapRotation(dungeonIndex, sublevel, pullIndex, deg)
+  if not db then db = self:GetDB() end
+  if not db then return end
+  db.minimapRotations = db.minimapRotations or {}
+  deg = ((math.floor(deg / 90 + 0.5) * 90) % 360 + 360) % 360
+  db.minimapRotations[tostring(dungeonIndex)..":"..tostring(sublevel)..":"..tostring(pullIndex)] = deg
+  return deg
+end
+
+-- =====================================================================
 -- UpdateAll — fan out to child modules
 -- =====================================================================
 
@@ -177,7 +199,7 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
   if event == "ADDON_LOADED" then
     local addon = ...
     if addon == AddonName then
-      local childDB = LibStub("AceDB-3.0"):New("MythicDungeonToolsNextPullDB", defaultSavedVars, true)
+      local childDB = LibStub("AceDB-3.0"):New("RotateNextPullTrackerDB", defaultSavedVars, true)
       db = childDB.global
       dbChar = childDB.char
       eventFrame:UnregisterEvent("ADDON_LOADED")
