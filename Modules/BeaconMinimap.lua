@@ -408,7 +408,18 @@ local function applyRotation(frame, deg, bounds)
   if not frame or not frame.minimapContainer or not bounds then return end
   deg = ((math.floor(deg / 90 + 0.5) * 90) % 360 + 360) % 360
   frame.rotationDeg = deg
-  if deg == 0 then return end
+
+  -- Back to 0°: NPT's applyZoom already restored the unrotated tile grid this
+  -- render — we just need to undo the texture spins left over from the last
+  -- rotation (positions were reset by applyZoom; angles were not).
+  if deg == 0 then
+    if frame.minimapTiles then
+      for _, tile in ipairs(frame.minimapTiles) do
+        if tile.SetRotation then tile:SetRotation(0) end
+      end
+    end
+    return
+  end
 
   local scale = frame.minimapScale or MIN_SCALE
   local cx, cy = bounds.centroidX, bounds.centroidY
