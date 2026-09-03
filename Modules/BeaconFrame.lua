@@ -444,7 +444,6 @@ local function create()
     local btn = CreateFrame("Button", nil, beaconFrame)
     btn:SetSize(16, 16)
     btn:SetPoint("TOPRIGHT", beaconFrame, "TOPRIGHT", offsetX, -4)
-    btn:SetNormalTexture(nil)
     btn:SetAlpha(0)
 
     local bg = btn:CreateTexture(nil, "BACKGROUND")
