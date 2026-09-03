@@ -475,7 +475,7 @@ local function create()
       frame.rotationDeg = newDeg
       local st = MDT_NPT.state
       if st and st.active then
-        local preset = MDT and MDT.GetCurrentPreset and MDT.GetCurrentPreset(st.dungeonIndex)
+        local preset = MDT and MDT.GetCurrentPreset and MDT.GetCurrentPreset(MDT, st.dungeonIndex)
         local sublevel = (preset and preset.value and preset.value.currentSublevel) or 1
         MDT_NPT:SetMinimapRotation(st.dungeonIndex, sublevel, st.currentNextPull, newDeg)
       end
@@ -523,7 +523,7 @@ local function create()
       frame.rotationDeg = newDeg
       local st = MDT_NPT.state
       if st and st.active then
-        local preset = MDT and MDT.GetCurrentPreset and MDT.GetCurrentPreset(st.dungeonIndex)
+        local preset = MDT and MDT.GetCurrentPreset and MDT.GetCurrentPreset(MDT, st.dungeonIndex)
         local sublevel = (preset and preset.value and preset.value.currentSublevel) or 1
         MDT_NPT:SetMinimapRotation(st.dungeonIndex, sublevel, st.currentNextPull, newDeg)
       end
