@@ -1,4 +1,4 @@
-local MDT = MDT
+local MDT = MDT_NPT.MDT or MDT
 local MDT_NPT = MDT_NPT
 ---@type DebugChannel
 local dbg = MDT_NPT.Debug.make("forces", false)

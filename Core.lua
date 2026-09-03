@@ -1,5 +1,5 @@
 local AddonName = ...
-local MDT = MDT
+local MDT = MDT_NPT.MDT or MDT
 local MDT_NPT = MDT_NPT
 local State = MDT_NPT.State
 local Scenario = MDT_NPT.Scenario

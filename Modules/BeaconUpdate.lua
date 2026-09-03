@@ -1,4 +1,4 @@
-local MDT = MDT
+local MDT = MDT_NPT.MDT or MDT
 local MDT_NPT = MDT_NPT
 local L = MDT_NPT.L
 local db

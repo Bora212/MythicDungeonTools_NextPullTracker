@@ -1,4 +1,4 @@
-local MDT = MDT
+local MDT = MDT_NPT.MDT or MDT
 local MDT_NPT = MDT_NPT
 local pairs, ipairs, tonumber, type = pairs, ipairs, tonumber, type
 local math_max, math_min, math_huge = math.max, math.min, math.huge
