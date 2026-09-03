@@ -1,4 +1,4 @@
-local MDT = MDT
+local MDT = MDT_NPT.MDT or MDT
 local MDT_NPT = MDT_NPT
 
 -- MDT's own CheckCurrentZone bails while a key is active, so we resolve the

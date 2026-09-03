@@ -1,4 +1,4 @@
-package-as: MythicDungeonTools_NextPullTracker
+package-as: RotateNextPullTracker
 
 enable-nolib-creation: no
 

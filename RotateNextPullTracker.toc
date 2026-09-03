@@ -1,0 +1,22 @@
+## Interface: 120001, 120005
+## Title: Rotate Next Pull Tracker
+## Notes: Fork of MDT Next Pull Tracker with 90-degree-step minimap rotation, saved per pull and restored per dungeon.
+## Notes-koKR: MDT Next Pull Tracker 포크 - 미니맵 90도 회전 기능 추가 (풀 단위 저장/복원)
+## Version: @project-version@
+## Author: Bora212 (original by Kévin Calmant)
+## Dependencies: MythicDungeonTools
+## SavedVariables: RotateNextPullTrackerDB
+## IconTexture: Interface\AddOns\RotateNextPullTracker\Textures\NPTFull
+## LoadOnDemand: 0
+
+Libs\LibStub\LibStub.lua
+Libs\CallbackHandler-1.0\CallbackHandler-1.0.xml
+Libs\AceDB-3.0\AceDB-3.0.xml
+
+init.lua
+locales.xml
+Modules\MDTAdapter.lua
+..\MythicDungeonTools\Midnight\load_midnight.xml
+Utils\load_utils.xml
+Modules\load_modules.xml
+Core.lua
