@@ -8,13 +8,15 @@
 ## SavedVariables: RotateNextPullTrackerDB
 ## IconTexture: Interface\AddOns\RotateNextPullTracker\Textures\NPTFull
 ## LoadOnDemand: 0
-## X-Original-Addon: MythicDungeonTools_NextPullTracker
+
+Libs\LibStub\LibStub.lua
+Libs\CallbackHandler-1.0\CallbackHandler-1.0.xml
+Libs\AceDB-3.0\AceDB-3.0.xml
 
 init.lua
 locales.xml
+Modules\MDTAdapter.lua
+..\MythicDungeonTools\Midnight\load_midnight.xml
 Utils\load_utils.xml
 Modules\load_modules.xml
 Core.lua
-#@do-not-package@
-Developer\load_developer.xml
-#@end-do-not-package@
