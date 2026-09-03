@@ -445,59 +445,9 @@ local function create()
   beaconFrame.resizeGrip = createResizeGrip(beaconFrame)
 
   -- === Rotate buttons (RotateNextPullTracker) ===
-  -- Two in the top-right control row (left of Revert Pull), two permanent at
-  -- the minimap's bottom-left corner (mirroring the zoom buttons). Each click
-  -- rotates ±90°, saves the angle for the current pull and re-renders.
-  local function createRotateButton(offsetX, direction, label, tooltip)
-    local btn = CreateFrame("Button", nil, beaconFrame)
-    btn:SetSize(24, 16)
-    btn:SetPoint("TOPRIGHT", beaconFrame, "TOPRIGHT", offsetX, -4)
-    btn:SetAlpha(0)
-
-    local bg = btn:CreateTexture(nil, "BACKGROUND")
-    bg:SetAllPoints()
-    bg:SetColorTexture(0, 0, 0, 0.65)
-    btn.__RNPT_bg = bg
-
-    local border = btn:CreateTexture(nil, "BORDER")
-    border:SetPoint("TOPLEFT", btn, "TOPLEFT", -1, 1)
-    border:SetPoint("BOTTOMRIGHT", btn, "BOTTOMRIGHT", 1, -1)
-    border:SetColorTexture(0.6, 0.6, 1, 0.6)
-
-    local text = btn:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    text:SetPoint("CENTER", btn, "CENTER", 0, 1)
-    text:SetText(label)
-    text:SetTextColor(0.7, 0.7, 1, 1)
-
-    btn:SetScript("OnClick", function()
-      local frame = beaconFrame
-      local newDeg = ((frame.rotationDeg or 0) + (direction >= 0 and 90 or -90)) % 360
-      frame.rotationDeg = newDeg
-      local st = MDT_NPT.state
-      if st and st.active then
-        local preset = MDT and MDT.GetCurrentPreset and MDT.GetCurrentPreset(MDT, st.dungeonIndex)
-        local sublevel = (preset and preset.value and preset.value.currentSublevel) or 1
-        MDT_NPT:SetMinimapRotation(st.dungeonIndex, sublevel, st.currentNextPull, newDeg)
-      end
-      Beacon:Update()
-    end)
-    btn:SetScript("OnEnter", function(self)
-      self:SetAlpha(1)
-      GameTooltip:SetOwner(self, "ANCHOR_BOTTOMLEFT")
-      GameTooltip:SetText(tooltip.." ("..tostring(beaconFrame.rotationDeg or 0).."°)", 1, 1, 1)
-      GameTooltip:Show()
-    end)
-    btn:SetScript("OnLeave", function(self)
-      self:SetAlpha(0)
-      GameTooltip:Hide()
-    end)
-    return btn
-  end
-
-  beaconFrame.rotateCwBtn = createRotateButton(-52, 1, "+90", "Rotate map +90°")
-  beaconFrame.rotateCcwBtn = createRotateButton(-79, -1, "-90", "Rotate map -90°")
-
-  -- Permanent corner buttons on the minimap (bottom-left, opposite zoom +/-).
+  -- Two permanent buttons at the minimap's bottom-left corner (mirroring the
+  -- zoom buttons). Each click rotates ±90°, saves the angle for the current
+  -- pull and re-renders.
   local function createCornerRotateButton(offsetX, direction, label, tooltip)
     local btn = CreateFrame("Button", nil, beaconFrame.minimapFrame)
     btn:SetSize(24, 16)
@@ -549,8 +499,6 @@ local function create()
     self.completeBtn:SetAlpha(0.7)
     self.skipBtn:SetAlpha(0.7)
     self.revertBtn:SetAlpha(0.7)
-    if self.rotateCwBtn then self.rotateCwBtn:SetAlpha(0.7) end
-    if self.rotateCcwBtn then self.rotateCcwBtn:SetAlpha(0.7) end
     self.resizeGrip:SetAlpha(0.7)
   end)
 
@@ -559,8 +507,6 @@ local function create()
       self.completeBtn:SetAlpha(0)
       self.skipBtn:SetAlpha(0)
       self.revertBtn:SetAlpha(0)
-      if self.rotateCwBtn then self.rotateCwBtn:SetAlpha(0) end
-      if self.rotateCcwBtn then self.rotateCcwBtn:SetAlpha(0) end
       self.resizeGrip:SetAlpha(0)
     end
   end)
