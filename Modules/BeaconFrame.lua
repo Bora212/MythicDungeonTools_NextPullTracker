@@ -11,6 +11,14 @@ local math_abs = math.abs
 local FRAME_BASE_W, FRAME_BASE_H = 360, 166
 local SCALE_MIN, SCALE_MAX = 0.5, 2.0
 
+-- The old global MouseIsOver helper is no longer available in WoW 12.x
+-- (removed FrameXML global; documented at warcraft.wiki.gg Patch_12.x API
+-- changes). Frames and regions expose the equivalent check as an instance
+-- method instead.
+local function isMouseOver(region)
+  return region ~= nil and type(region.IsMouseOver) == "function" and region:IsMouseOver() or false
+end
+
 ---Drives uniform `SetScale` on the parent from cursor drag, then persists the
 ---final scale on release. Locked beacons ignore the drag.
 local function createResizeGrip(parent)
